@@ -1,0 +1,23 @@
+{
+  "name": "peerport",
+  "version": "1.0.0",
+  "description": "manage system port routing",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SKYCRATE-ltd/peerport.git"
+  },
+  "keywords": [
+    "ports"
+  ],
+  "author": "Graham Robertson | SKYCRATE ltd",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/SKYCRATE-ltd/peerport/issues"
+  },
+  "homepage": "https://github.com/SKYCRATE-ltd/peerport#readme"
+}
