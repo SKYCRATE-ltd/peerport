@@ -77,13 +77,13 @@ const CMDS = {
 	up: () =>
 		RULES_FILE
 			.map(rule => render_rule(...rule))
-			.map(rule => 'iptables -A' + rule)
+			.map(rule => 'iptables -A ' + rule)
 			.join(NEWLINE),
 	// Prepend iptables -D
 	down: () => {
 		RULES_FILE
 			.map(rule => render_rule(...rule))
-			.map(rule => 'iptables -D' + rule)
+			.map(rule => 'iptables -D ' + rule)
 			.join(NEWLINE)
 	}
 };
