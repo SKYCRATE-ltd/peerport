@@ -19,5 +19,8 @@
   "bugs": {
     "url": "https://github.com/SKYCRATE-ltd/peerport/issues"
   },
-  "homepage": "https://github.com/SKYCRATE-ltd/peerport#readme"
+  "homepage": "https://github.com/SKYCRATE-ltd/peerport#readme",
+  "dependencies": {
+    "termite": "github:SKYCRATE-ltd/termite"
+  }
 }

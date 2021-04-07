@@ -1,60 +1,42 @@
 #!/bin/env node
 
-// TODO: abstract something out of this with DNS... teermite + smthg smthg
-
 import {
-	readFileSync,
-	writeFileSync
-} from "fs";
-
-const $ = process.argv.slice(2);
+	is_sudo, write, exists, exec,
+	readlines
+} from "computer";
+import Program from "termite";
 
 const RETURN = x => x;
 const NEWLINE = '\n';
-const COMMENT = '#';
-const INTERFACE = 'eth0';
-const encoding = "utf-8";
-
-const FILE = '/etc/wireguard/rules';
 const SPACE = ' ';
-let [
-	entry_port,
-	CMD,
-	dest_ip,
-	dest_port
-] = process.argv.slice(2);
+const FILE = '~/.rules';
 
-const parse = file =>
-	readFileSync(file, {encoding})
-	.split(NEWLINE)
-	.map(x => x.trim())
-	.filter(RETURN)
-	.filter(x => !x.startsWith(COMMENT))
+const parse = file => readlines(file)
 	.map(rule => {
 		const parts = rule.split(SPACE).filter(RETURN);
+		// storing it as is, is a bit dumb.
 		return [parts[8], ...parts[12].split(':')];
 	});
-
+const parse_args = args => {
+	args = args.join(' ').split('=>').map(x => x.trim());
+	return [parseInt(args[0]), ...args[1].split(':')];
+}
 const render_rule = (port_a, dest_ip, port_b) =>
 	`PREROUTING -t nat -i ${INTERFACE} -p tcp --dport ${port_a} -j DNAT --to ${dest_ip}:${port_b}`;
+const render = rules => rules.map(rule => render_rule(...rule)).join(NEWLINE);
 
-const render = rules =>
-	rules.map(rule => render_rule(...rule)).join(NEWLINE);
-
-const view_rule = (entry_port, dest_ip, dest_port) =>
-	`${entry_port} => ${dest_ip}:${dest_port}`;
-
-const view = rules =>
-	rules.map(rule => view_rule(...rule)).join(NEWLINE);
-
-const save = rules =>
-	writeFileSync(FILE, render(rules), {encoding});
+const view_rule = (entry_port, dest_ip, dest_port) => `${entry_port} => ${dest_ip}:${dest_port}`;
+const view = rules => rules.map(rule => view_rule(...rule)).join(NEWLINE);
+const save = rules => write(FILE, render(rules));
 
 const RULES_FILE = parse(FILE);
 
-const CMDS = {
-	list: () => view(RULES_FILE),
-	add: (entry_port, dest_ip, dest_port) => {
+export default Program({
+	list(interface) {
+		this.println(view(RULES_FILE));
+	},
+	add(interface, ...args) {
+		const [entry_port, dest_ip, dest_port] = parse_args(args);
 		let rule = RULES_FILE.find(([port]) => entry_port === port);
 		if (!rule)
 			RULES_FILE.push([entry_port, dest_ip, dest_port]);
@@ -62,33 +44,31 @@ const CMDS = {
 			rule.splice(0, 3, entry_port, dest_ip, dest_port);
 		
 		save(RULES_FILE);
-		return view(RULES_FILE);
+		this.println(view(RULES_FILE));
 	},
-	remove: entry_port => {
+	remove(interface, entry_port) {
 		const rule = RULES_FILE.find(([port]) => entry_port === port);
 		if (!rule)
 			return `ERROR: port ${entry_port} has no existing rule.`
 		
 		const rules = RULES_FILE.filter(([port]) => port !== entry_port);
 		save(rules);
-		return view(rules);
+		this.println(view(rules));
+	},
+	clear(interface) {
+		// TODO: implement
 	},
 	// Prepend iptables -A
-	up: () =>
-		RULES_FILE
+	on(interface) {
+		this.list(RULES_FILE
 			.map(rule => render_rule(...rule))
-			.map(rule => 'iptables -A ' + rule)
-			.join(NEWLINE),
+			.map(rule => 'iptables -A ' + rule));
+	},
 	// Prepend iptables -D
-	down: () => {
-		RULES_FILE
+	off(interface) {
+		this.list(RULES_FILE
 			.map(rule => render_rule(...rule))
-			.map(rule => 'iptables -D ' + rule)
-			.join(NEWLINE)
+			.map(rule => 'iptables -D ' + rule));
+		// and then actuall set 'em!
 	}
-};
-
-if (!entry_port || !CMD)
-	CMD = "list";
-
-console.log(CMDS[CMD](entry_port, dest_ip, dest_port));
+});
