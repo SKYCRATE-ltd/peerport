@@ -1,11 +1,11 @@
-#!/bin/env node
+#!/usr/bin/env node
 
 import peerport from "./index.js";
 
 let [
-	interface,
+	interf,
 	CMD,
 	...args
 ] = process.argv.slice(2);
 
-peerport(CMD, interface, ...args);
+peerport(CMD, interf, ...args);

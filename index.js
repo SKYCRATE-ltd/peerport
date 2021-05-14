@@ -2,7 +2,7 @@
 
 import {
 	is_sudo, write, exists, exec,
-	readlines
+	readlines, touch
 } from "computer";
 import Program from "termite";
 
@@ -11,6 +11,7 @@ const NEWLINE = '\n';
 const SPACE = ' ';
 const FILE = '~/.rules';
 
+touch(FILE);
 const parse = file => readlines(file)
 	.map(rule => {
 		const parts = rule.split(SPACE).filter(RETURN);
@@ -32,10 +33,10 @@ const save = rules => write(FILE, render(rules));
 const RULES_FILE = parse(FILE);
 
 export default Program({
-	list(interface) {
+	list(interf) {
 		this.println(view(RULES_FILE));
 	},
-	add(interface, ...args) {
+	add(interf, ...args) {
 		const [entry_port, dest_ip, dest_port] = parse_args(args);
 		let rule = RULES_FILE.find(([port]) => entry_port === port);
 		if (!rule)
@@ -46,7 +47,7 @@ export default Program({
 		save(RULES_FILE);
 		this.println(view(RULES_FILE));
 	},
-	remove(interface, entry_port) {
+	remove(interf, entry_port) {
 		const rule = RULES_FILE.find(([port]) => entry_port === port);
 		if (!rule)
 			return `ERROR: port ${entry_port} has no existing rule.`
@@ -55,17 +56,17 @@ export default Program({
 		save(rules);
 		this.println(view(rules));
 	},
-	clear(interface) {
+	clear(interf) {
 		// TODO: implement
 	},
 	// Prepend iptables -A
-	on(interface) {
+	on(interf) {
 		this.list(RULES_FILE
 			.map(rule => render_rule(...rule))
 			.map(rule => 'iptables -A ' + rule));
 	},
 	// Prepend iptables -D
-	off(interface) {
+	off(interf) {
 		this.list(RULES_FILE
 			.map(rule => render_rule(...rule))
 			.map(rule => 'iptables -D ' + rule));
